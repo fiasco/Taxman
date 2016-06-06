@@ -1,0 +1,14 @@
+#!/usr/bin/env php
+<?php
+
+require 'vendor/autoload.php';
+
+
+use Taxman\Command\MultisiteAuditCommand;
+use Taxman\Command\AcsfModuleDebtCommand;
+use Symfony\Component\Console\Application;
+
+$application = new Application();
+$application->add(new MultisiteAuditCommand());
+$application->add(new AcsfModuleDebtCommand());
+$application->run();
