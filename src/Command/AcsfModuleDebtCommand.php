@@ -50,27 +50,17 @@ class AcsfModuleDebtCommand extends ContextAwareCommand
         $config->retrieve();
 
         $collection = $config->get();
-        $collection = [];
 
         $usage = new AggregateModuleUsage();
         $usage->loadContext($this->context());
         $usage->setArgument('drush.options', $collection);
         $usage->retrieve();
 
-        $debt = [];
-        $siteCount = count($usage->getSites());
-        foreach ($usage->getModuleList() as $module) {
-          $moduleUsage = $usage->getModuleUsage($module);
-          $debt[$moduleUsage][$module] = $module;
-        }
+        $debt = $usage->getMultisiteModuleUsage();
+        $maintIndex = $usage->getMultisiteModuleMaintenceIndexes();
 
-        $maintIndex = [];
-        foreach ($debt as $moduleUsage => $module_list) {
-          if ($moduleUsage == 0) {
-            $maintIndex[$moduleUsage] = count($module_list);
-            continue;
-          }
-          $maintIndex[$moduleUsage] = count($module_list) / $moduleUsage;
+        if (!array_sum($maintIndex) || !count($usage->getModuleList())) {
+          throw new \Exception("Unable to determine Maintenance Index.");
         }
 
         $factor = array_sum($maintIndex) / count($usage->getModuleList());

@@ -1,6 +1,7 @@
 <?php
 namespace Taxman\App\Drupal\Multisite\DataProvider;
 use Taxman\Data\DataProvider;
+use Taxman\App\Drupal\Drush;
 use Symfony\Component\Console\Input\InputArgument;
 
 /**
@@ -92,6 +93,40 @@ class AggregateModuleUsage extends DataProvider {
       }
     }
     return $usage;
+  }
+
+  /**
+   * Get module usage stats across a multisite instance.
+   *
+   * @return array of usage of modules.
+   */
+  public function getMultisiteModuleUsage()
+  {
+    $usage = [];
+    $siteCount = count($this->getSites());
+    foreach ($this->getModuleList() as $module) {
+      $moduleUsage = $this->getModuleUsage($module);
+      $usage[$moduleUsage][$module] = $module;
+    }
+    return $usage;
+  }
+
+  /**
+   * Get the maintenance index for each module in the codebase.
+   *
+   * @return array of maintenance indexes.
+   */
+  public function getMultisiteModuleMaintenceIndexes()
+  {
+    $maintIndex = [];
+    foreach ($this->getMultisiteModuleUsage() as $moduleUsage => $module_list) {
+      if ($moduleUsage == 0) {
+        $maintIndex[$moduleUsage] = count($module_list);
+        continue;
+      }
+      $maintIndex[$moduleUsage] = count($module_list) / $moduleUsage;
+    }
+    return $maintIndex;
   }
 
   /**
