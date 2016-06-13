@@ -7,6 +7,7 @@ use Taxman\ContextualInterface;
 use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Exception\RuntimeException;
+use Symfony\Component\Filesystem\Filesystem;
 
 abstract class DataProvider implements ContextualInterface {
   const CACHE_DIR = '.cache';
@@ -165,6 +166,10 @@ abstract class DataProvider implements ContextualInterface {
    * @return mixed The cached data unserialised.
    */
   public function loadCache() {
+    $input = $this->context->get('input');
+    if ($input->getOption('no-cache')) {
+      return NULL;
+    }
     // TODO: Implement expiry.
     $filepath = $this->cacheFilepath();
     $output = $this->context->get('output');
@@ -202,7 +207,18 @@ abstract class DataProvider implements ContextualInterface {
         throw new \Exception(self::CACHE_DIR . " does not exist. Cannot store cached objects.");
       }
     }
-    return self::CACHE_DIR . '/' . $this->cacheKey;
+    $bits = explode("\\", get_class($this));
+    array_unshift($bits, self::CACHE_DIR);
+    $filepath = implode('/', $bits);
+
+    // Create filepath if it doesn't exist.
+    if (!is_dir($filepath)) {
+      $fs = new Filesystem();
+      $fs->mkdir($filepath);
+    }
+
+    $bits[] = $this->cacheKey;
+    return implode('/', $bits);
   }
 }
 

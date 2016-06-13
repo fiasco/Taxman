@@ -21,21 +21,21 @@ class Remote extends Local implements ConfigurableInterface {
   public function configure(InputDefinition $inputDefinition) {
     $inputDefinition->addOption($this->createOption(
       'ssh.user',
-      null,
+      'u',
       InputOption::VALUE_OPTIONAL,
       'The user to connect to the remote server with via ssh.'
     ));
 
     $inputDefinition->addOption($this->createOption(
       'ssh.host',
-      null,
+      'H',
       InputOption::VALUE_OPTIONAL,
       'The hostname or ip to connect to the remote server with via ssh.'
     ));
 
     $inputDefinition->addOption($this->createOption(
       'ssh.configFile',
-      null,
+      'c',
       InputOption::VALUE_OPTIONAL,
       'The destination of the ssh config file that should be used to load ssh config.'
     ));

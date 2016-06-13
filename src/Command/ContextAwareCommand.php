@@ -3,6 +3,7 @@ namespace Taxman\Command;
 
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Taxman\Context;
 use Taxman\ContextualInterface;
@@ -20,12 +21,19 @@ abstract class ContextAwareCommand extends Command
     foreach ($this->context->configurableOptions() as $option) {
       $this->getDefinition()->addOption($option);
     }
+
+    $this->addOption(
+       'no-cache',
+       'xc',
+       InputOption::VALUE_NONE,
+       'Do no use a cache if present.'
+    );
   }
 
   protected function initialize(InputInterface $input, OutputInterface $output)
   {
     $this->addContext('output', new ContextualWrapper($output))
-         ->addContext('input', new ContextualWrapper($output));
+         ->addContext('input', new ContextualWrapper($input));
 
     $this->context->setOptions($input->getOptions());
 
