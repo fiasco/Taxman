@@ -7,6 +7,9 @@ use Taxman\Data\Dispatch;
 use Taxman\Data\DispatchManager;
 use Symfony\Component\Console\Input\InputArgument;
 
+/**
+ * Produce an array of DispatchManager options from a Site Factory sites.json.
+ */
 class SiteConfigCollection extends DataProvider {
 
   /**
@@ -15,6 +18,9 @@ class SiteConfigCollection extends DataProvider {
    */
   protected $cachable = FALSE;
 
+  /**
+   * Require site and environment to obtain sites.json from.
+   */
   protected function configure() {
     $this->addArgument(
       'site',
@@ -29,6 +35,9 @@ class SiteConfigCollection extends DataProvider {
     ;
   }
 
+  /**
+   * Read sites.json file and generate drush options.
+   */
   protected function execute() {
 
     $site = $this->getArgument('site');
