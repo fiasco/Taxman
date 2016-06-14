@@ -2,13 +2,13 @@
 namespace Taxman\Environment;
 
 use Taxman\Context;
+use Taxman\ConfigurableContext;
 use Taxman\Data\Dispatch;
-use Taxman\EnvironmentInterface;
 
 /**
  * Local execution environment.
  */
-class Local implements EnvironmentInterface {
+class Local extends ConfigurableContext implements EnvironmentInterface {
 
   protected $context;
   protected $output = array();
@@ -17,7 +17,7 @@ class Local implements EnvironmentInterface {
   /**
    * Implements ContextualInterface::loadContext().
    */
-  public function loadContext(Context $context) {
+  public function load(Context $context) {
     $this->context = $context;
   }
 

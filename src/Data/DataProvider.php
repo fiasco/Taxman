@@ -4,12 +4,13 @@ namespace Taxman\Data;
 
 use Taxman\Context;
 use Taxman\ContextualInterface;
+use Taxman\ConfigurableContext;
 use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Exception\RuntimeException;
 use Symfony\Component\Filesystem\Filesystem;
 
-abstract class DataProvider implements ContextualInterface {
+abstract class DataProvider extends ConfigurableContext implements ContextualInterface {
   const CACHE_DIR = '.cache';
 
   protected $context;
@@ -19,14 +20,6 @@ abstract class DataProvider implements ContextualInterface {
   protected $cacheOnContexts = [];
   protected $cacheable = TRUE;
   private   $cacheKey;
-
-  /**
-   * Constructor.
-   */
-  public function __construct()
-  {
-    $this->definition = new InputDefinition();
-  }
 
   /**
    * Get the value this DataProvider maintains.
@@ -41,44 +34,6 @@ abstract class DataProvider implements ContextualInterface {
   protected function set($value) {
     $this->value = $value;
     return $this;
-  }
-
-  /**
-   * Adds an argument. Should be called during ::configure().
-   *
-   * @param string $name        The argument name
-   * @param int    $mode        The argument mode: InputArgument::REQUIRED or InputArgument::OPTIONAL
-   * @param string $description A description text
-   * @param mixed  $default     The default value (for InputArgument::OPTIONAL mode only)
-   *
-   * @return Command The current instance
-   */
-  protected function addArgument($name, $mode = null, $description = '', $default = null)
-  {
-      $this->definition->addArgument(new InputArgument($name, $mode, $description, $default));
-
-      return $this;
-  }
-
-  /**
-   * Set the value of an argument.
-   */
-  public function setArgument($name, $value)
-  {
-    $this->arguments[$name] = $value;
-  }
-
-  /**
-   * Get the value of an argument.
-   *
-   * @throws \Exception when argument doesn't exist.
-   */
-  protected function getArgument($name)
-  {
-    if (!isset($this->arguments[$name])) {
-      throw new \Exception("Argument not found: $name");
-    }
-    return $this->arguments[$name];
   }
 
   /**
@@ -103,15 +58,9 @@ abstract class DataProvider implements ContextualInterface {
   /**
    * ContextualInterface::loadContext().
    */
-  public function loadContext(Context $context) {
+  public function load(Context $context) {
     $this->context = $context;
-  }
-
-  /**
-   * Default implementation of configure which can be overridden.
-   */
-  protected function configure()
-  {
+    $this->configure();
   }
 
   /**

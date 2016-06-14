@@ -4,7 +4,7 @@ namespace Taxman\App\Acquia\SiteFactory;
 
 use Taxman\Data\DataProvider;
 use Taxman\Data\Dispatch;
-use Taxman\Data\DispatchManager;
+use Taxman\App\Drupal\DrushOptions;
 use Symfony\Component\Console\Input\InputArgument;
 
 /**
@@ -21,18 +21,18 @@ class SiteConfigCollection extends DataProvider {
   /**
    * Require site and environment to obtain sites.json from.
    */
-  protected function configure() {
-    $this->addArgument(
-      'site',
-      InputArgument::REQUIRED,
-      'The name of the docroot for the subscription.'
-    )
-    ->addArgument(
-      'env',
-      InputArgument::REQUIRED,
-      'The environment to run this on. E.g. 01live.'
-    )
-    ;
+  public function initialize() {
+    $this
+      ->defineArgument(
+        'site',
+        InputArgument::REQUIRED,
+        'The name of the docroot for the subscription.'
+      )
+      ->defineArgument(
+        'env',
+        InputArgument::REQUIRED,
+        'The environment to run this on. E.g. 01live.'
+      );
   }
 
   /**
@@ -59,7 +59,7 @@ class SiteConfigCollection extends DataProvider {
         continue;
       }
 
-      $drushOptions = new DispatchManager();
+      $drushOptions = new DrushOptions();
       $drushOptions->setOptions([
         'root' => '/var/www/html/' . $site . '.' . $env . '/docroot',
         'uri' => $domain,

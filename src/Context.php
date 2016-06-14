@@ -4,6 +4,9 @@ namespace Taxman;
 
 use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputOption;
+use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Command\Command;
 
 /**
  * Context is a contextual object that holds environmental conditions.
@@ -18,32 +21,16 @@ use Symfony\Component\Console\Input\InputOption;
 class Context {
 
   protected $contexts = array();
-  protected $optionsMap = [];
 
-  /**
-   * Obtain configurable options from loaded contexts.
-   *
-   * @return array of InputOption options.
-   */
-  final public function configurableOptions() {
-    $options = [];
+  public function configure(Command $command)
+  {
     foreach ($this->contexts as $name => $context) {
-      // Only contexts that implement ConfigurableInterface can have their
-      // options registered with Context.
-      if (!($context instanceof ConfigurableInterface)) {
-        continue;
-      }
-      $InputDefinition = new InputDefinition();
-      $context->configure($InputDefinition);
-
-      foreach ($InputDefinition->getOptions() as $inputOption) {
-        $options[] = $inputOption;
-
-        // Maintain a map of which contexts present which options.
-        $this->optionsMap[$inputOption->getName()] = $name;
-      }
+        $command->getDefinition()
+                ->addOptions(
+                  $context->getDefinition()->getOptions()
+                );
     }
-    return $options;
+    return $this;
   }
 
  /**
@@ -53,11 +40,24 @@ class Context {
   *   A keyed array of option keys and values.
   */
   public function setOptions(array $options) {
-    foreach ($options as $name => $value) {
-      if (isset($this->optionsMap[$name])) {
-        $context = $this->contexts[$this->optionsMap[$name]];
-        $context->setOption($name, $value);
+    // Build up an options array that will allow us to easily map options to the
+    // contexts that defined them.
+    $options_map = array();
+    foreach ($this->contexts as $name => $context) {
+      $opts = array_keys($context->getDefinition()->getOptions());
+      foreach ($opts as $opt) {
+        $options_map[$opt] = $name;
       }
+    }
+
+    foreach ($options as $name => $value) {
+      if (!isset($options_map[$name])) {
+        continue;
+      }
+
+      $this
+        ->get($options_map[$name])
+        ->setOption($name, $value);
     }
     return $this;
   }
@@ -88,8 +88,8 @@ class Context {
    */
   public function load($name, ContextualInterface $value) {
     $this->contexts[$name] = $value;
-    $this->contexts[$name]->loadContext($this);
-    return $this;
+    $this->contexts[$name]->load($this);
+    return $value;
   }
 }
 

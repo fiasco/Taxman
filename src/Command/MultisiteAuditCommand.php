@@ -8,8 +8,10 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Taxman\Context;
 use Taxman\Environment\Remote;
+use Taxman\Environment\Local;
 use Taxman\App\Drupal\Drush;
-use Taxman\App\Drupal\Multisite\DataProvider\AggregateModuleUsage;
+use Taxman\App\Drupal\Drush\SiteConfigCollection;
+
 
 
 class MultisiteAuditCommand extends ContextAwareCommand
@@ -25,41 +27,32 @@ class MultisiteAuditCommand extends ContextAwareCommand
                 'A Drush alias group to use to treat as a multisite configuration.'
             )
             ->addContext(
-                'environment',
+                'remote',
                 new Remote()
             )
-        ;
+            ->addContext(
+                'local',
+                new Local()
+            );
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-      $config = new SiteConfigCollection();
-      $config->loadContext($this->context());
-      $config->setArgument('site', $input->getArgument('site'));
-      $config->setArgument('env', $input->getArgument('env'));
-      $config->retrieve();
 
-      $collection = $config->get();
+      $context = $this->context();
+      $context->load('environment', new Local());
+      $config = $context->load('site.config', new SiteConfigCollection());
 
-      $usage = new AggregateModuleUsage();
-      $usage->loadContext($this->context());
-      $usage->setArgument('drush.options', $collection);
-      $usage->retrieve();
+      $alias = str_replace('@', '', $input->getArgument('drush-alias'));
+      $bits = explode('.', $alias);
 
-      $debt = $usage->getMultisiteModuleUsage();
-      $maintIndex = $usage->getMultisiteModuleMaintenceIndexes();
+      $config->setArgument('site', $bits[0]);
 
-      if (!array_sum($maintIndex) || !count($usage->getModuleList())) {
-        throw new \Exception("Unable to determine Maintenance Index.");
+      if (isset($bits[1])) {
+        $config->setArgument('env', $bits[1]);
       }
 
-      $factor = array_sum($maintIndex) / count($usage->getModuleList());
-      $index = round($factor, 2);
-
-      $output->writeln("<info>Maintenance Index: $index</info>");
-      $output->writeln("<info>Unique module usage: " . count($debt[1]) . "</info>");
-      $output->writeln("<info>Unused modules: " . count($debt[0]) . "</info>");
-      $output->writeln("<info>Total modules: " . count($usage->getModuleList()) . "</info> (" . round($factor * 100, 2). "% effeciency)");
-
+      $config->retrieve();
+      print_r($config->get());
     }
 }

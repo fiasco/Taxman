@@ -15,13 +15,13 @@ use Taxman\App\Drupal\Multisite\DataProvider\AggregateModuleUsage;
 use Taxman\App\Acquia\SiteFactory;
 use Taxman\App\Drupal\Drush\SiteConfigCollection;
 
-class AcsfModuleDebtCommand extends ContextAwareCommand
+class AcsfModuleListCommand extends ContextAwareCommand
 {
     protected function configure()
     {
         $this
-            ->setName('acsf:module:debt')
-            ->setDescription('Collect information about an Drupal multisite.')
+            ->setName('acsf:module:list')
+            ->setDescription('Show sites using module')
             ->addArgument(
                 'acquia.docroot',
                 InputArgument::REQUIRED,
@@ -29,6 +29,11 @@ class AcsfModuleDebtCommand extends ContextAwareCommand
             )
             ->addArgument(
                 'acquia.environment',
+                InputArgument::REQUIRED,
+                'The environment to run this on. E.g. 01live.'
+            )
+            ->addArgument(
+                'module',
                 InputArgument::REQUIRED,
                 'The environment to run this on. E.g. 01live.'
             )
@@ -80,45 +85,14 @@ class AcsfModuleDebtCommand extends ContextAwareCommand
         $usage->setArgument('drush.options', $collection);
         $usage->retrieve();
 
-        $debt = $usage->getMultisiteModuleUsage();
-        $maintIndex = $usage->getMultisiteModuleMaintenceIndexes();
-
-        if (!array_sum($maintIndex) || !count($usage->getModuleList())) {
-          throw new \Exception("Unable to determine Maintenance Index.");
-        }
-
-        $factor = array_sum($maintIndex) / count($usage->getModuleList());
-        $index = round($factor, 2);
+        $module = $input->getArgument('module');
 
         $table = new Table($output);
-
-        $table->addRow(['Total Sites', $site_count = count($usage->getSites())]);
-        $table->addRow(['Maintenance Index', $index]);
-        $table->addRow(['Unique module usage', count($debt[1])]);
-        $table->addRow(['Unused modules', count($debt[0])]);
-        $table->addRow(['Total modules', count($usage->getModuleList()) . " (" . round($factor * 100, 2). "% effeciency)"]);
-
-        $table->render();
-
-        $table = new Table($output);
-        $table->setHeaders(['Module', 'Usage', 'Percentage']);
-
-        $rows = [];
-        foreach ($usage->getModuleList() as $module) {
-          $u = $usage->getModuleUsage($module);
-          $rows[] = [$module, $u, round($u/$site_count * 100, 2) . '%'];
-          //$table->addRow([$module, $u, round($u/$site_count * 100, 2) . '%']);
+        $table->setHeaders(['Sites using ' . $module . ' module', 'Module status']);
+        foreach ($usage->getSitesbyModule($module) as $site => $status) {
+          $list = $usage->getSiteModules($site);
+          $table->addRow([$site, $status]);
         }
-
-        $sort_column = 0;
-        usort($rows, function($a, $b) use ($sort_column) {
-          if ($a[$sort_column] == $b[$sort_column]) {
-            return 0;
-          }
-          return $a[$sort_column] > $b[$sort_column] ? 1 :-1;
-        });
-        $table->addRows($rows);
-
         $table->render();
     }
 }

@@ -5,7 +5,7 @@ namespace Taxman;
 /**
  * Objects that can be used as Context data must implement ContextualInterface.
  */
-interface ContextualInterface {
+interface ContextualInterface extends ConfigurableInterface {
 
   /**
    * Respond to being loaded into a Context.
@@ -17,7 +17,7 @@ interface ContextualInterface {
    *
    * @param Context $context
    */
-  public function loadContext(Context $context);
+  public function load(Context $context);
 }
 
  ?>

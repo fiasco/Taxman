@@ -3,42 +3,40 @@ namespace Taxman\Environment;
 
 use Taxman\Data\Dispatch;
 use Taxman\Context;
-use Taxman\ConfigurableInterface;
 use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Input\InputOption;
 
 /**
  * Remote execution environment.
  */
-class Remote extends Local implements ConfigurableInterface {
-  use \Taxman\ConfigurableTrait;
+class Remote extends Local {
 
   protected $remoteDispatch;
 
   /**
-   * Implements ConfigurableInterface::configure().
+   * Implements ConfigurableInterface::initialize().
    */
-  public function configure(InputDefinition $inputDefinition) {
-    $inputDefinition->addOption($this->createOption(
+  public function initialize() {
+    $this->defineOption(
       'ssh.user',
       'u',
       InputOption::VALUE_OPTIONAL,
       'The user to connect to the remote server with via ssh.'
-    ));
+    );
 
-    $inputDefinition->addOption($this->createOption(
+    $this->defineOption(
       'ssh.host',
       'H',
       InputOption::VALUE_OPTIONAL,
       'The hostname or ip to connect to the remote server with via ssh.'
-    ));
+    );
 
-    $inputDefinition->addOption($this->createOption(
+    $this->defineOption(
       'ssh.configFile',
-      'c',
+      'F',
       InputOption::VALUE_OPTIONAL,
       'The destination of the ssh config file that should be used to load ssh config.'
-    ));
+    );
   }
 
   /**

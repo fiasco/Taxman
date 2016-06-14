@@ -13,10 +13,14 @@ use Symfony\Component\Console\Input\InputArgument;
 class AggregateModuleUsage extends DataProvider {
 
   protected $moduleNames = array();
+  protected $maintenanceIndex = 0;
+  protected $uniqueModuleUsage = 0;
+  protected $unusedModules = 0;
+  protected $totalModules = 0;
 
-  protected function configure()
+  protected function initialize()
   {
-    $this->addArgument(
+    $this->defineArgument(
       'drush.options',
       InputArgument::REQUIRED | InputArgument::IS_ARRAY,
       'Array of DispatchManager options for Drush to execute against a site'
@@ -93,6 +97,17 @@ class AggregateModuleUsage extends DataProvider {
       }
     }
     return $usage;
+  }
+
+  public function getSitesbyModule($module) {
+    $sites = [];
+    foreach ($this->get() as $domain => $module_list) {
+      if (isset($module_list[$module])) {
+        $sites[$domain] = $module_list[$module];
+      }
+    }
+    ksort($sites);
+    return $sites;
   }
 
   /**

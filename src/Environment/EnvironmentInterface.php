@@ -1,8 +1,9 @@
 <?php
 
-namespace Taxman;
+namespace Taxman\Environment;
 
 use Taxman\Data\Dispatch;
+use Taxman\ContextualInterface;
 
 /**
  * Define methods required for an Environment.
