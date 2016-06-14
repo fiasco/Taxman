@@ -12,7 +12,8 @@ use Taxman\Environment\Remote;
 use Taxman\Dispatch;
 use Taxman\App\Drupal\Drush;
 use Taxman\App\Drupal\Multisite\DataProvider\AggregateModuleUsage;
-use Taxman\App\Acquia\SiteFactory\SiteConfigCollection;
+use Taxman\App\Acquia\SiteFactory;
+use Taxman\App\Drupal\Drush\SiteConfigCollection;
 
 
 
@@ -24,18 +25,24 @@ class AcsfSiteListCommand extends ContextAwareCommand
             ->setName('acsf:site:list')
             ->setDescription('List sites on ACSF by domain')
             ->addArgument(
-                'site',
+                'acquia.docroot',
                 InputArgument::REQUIRED,
                 'The name of the docroot for the subscription.'
             )
             ->addArgument(
-                'env',
+                'acquia.environment',
                 InputArgument::REQUIRED,
                 'The environment to run this on. E.g. 01live.'
             )
             ->addContext(
-                'environment',
+                'remote',
                 new Remote()
+            )
+            ->addOption(
+              'load-from-drush-alias',
+              'a',
+              InputOption::VALUE_NONE,
+              ''
             )
         ;
     }
@@ -44,10 +51,29 @@ class AcsfSiteListCommand extends ContextAwareCommand
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $config = new SiteConfigCollection();
-        $config->loadContext($this->context());
-        $config->setArgument('site', $input->getArgument('site'));
-        $config->setArgument('env', $input->getArgument('env'));
+        $context = $this->context();
+
+        $docroot = $input->getArgument('acquia.docroot');
+        $env = $input->getArgument('acquia.environment');
+
+        // Pull the ssh credentials from a local drush alias file.
+        if ($input->getOption('load-from-drush-alias')) {
+          $aliases = $context->load('drush.aliases', new SiteConfigCollection());
+          $aliases->setArgument('site', $docroot);
+          $aliases->setArgument('env', $env);
+          $drushOptions = $aliases->retrieve();
+          $remote = array_pop($drushOptions)->createRemoteEnvironment();
+        }
+        else {
+          $remote = new Remote();
+        }
+        $remote->setOptions($context->get('remote')->getOptions());
+        $context->load('environment', $remote);
+
+        $config = new SiteFactory\SiteConfigCollection();
+        $config->load($this->context());
+        $config->setArgument('site', $docroot);
+        $config->setArgument('env', $env);
         $config->retrieve();
 
         $rows = array();
