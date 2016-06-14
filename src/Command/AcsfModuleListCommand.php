@@ -41,7 +41,13 @@ class AcsfModuleListCommand extends ContextAwareCommand
               'load-from-drush-alias',
               'a',
               InputOption::VALUE_NONE,
-              ''
+              'Choose to load the SSH criteria from a drush aliases.'
+            )
+            ->addOption(
+              'status',
+              null,
+              InputOption::VALUE_OPTIONAL,
+              'Only show sites that have module in status'
             )
             ->addContext(
                 'remote',
@@ -89,9 +95,13 @@ class AcsfModuleListCommand extends ContextAwareCommand
 
         $table = new Table($output);
         $table->setHeaders(['Sites using ' . $module . ' module', 'Module status']);
+        $matching_status = strtolower($input->getOption('status'));
         foreach ($usage->getSitesbyModule($module) as $site => $status) {
           $list = $usage->getSiteModules($site);
-          $table->addRow([$site, $status]);
+
+          if (empty($matching_status) || ($matching_status == strtolower($status))) {
+            $table->addRow([$site, $status]);
+          }
         }
         $table->render();
     }
