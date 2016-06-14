@@ -7,7 +7,6 @@ use Taxman\Command;
 use Symfony\Component\Console\Application;
 
 $application = new Application();
-$application->add(new Command\MultisiteAuditCommand());
 $application->add(new Command\AcsfModuleDebtCommand());
 $application->add(new Command\AcsfModuleListCommand());
 $application->add(new Command\AcsfSiteListCommand());
