@@ -10,4 +10,5 @@ $application = new Application();
 $application->add(new Command\AcsfModuleDebtCommand());
 $application->add(new Command\AcsfModuleListCommand());
 $application->add(new Command\AcsfSiteListCommand());
+$application->add(new Command\AcsfSiteModulesCommand());
 $application->run();
