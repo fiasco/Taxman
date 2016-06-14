@@ -6,7 +6,6 @@
       "symfony/console": "^3.1",
       "symfony/dependency-injection": "^3.1",
       "symfony/config": "^3.1",
-      "symfony/cache": "^3.1"
     },
     "authors": [
       { "name": "Josh Waihi", "email": "joshwaihi@gmail.com" },
