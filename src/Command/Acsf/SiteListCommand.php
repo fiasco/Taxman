@@ -1,5 +1,5 @@
 <?php
-namespace Taxman\Command;
+namespace Taxman\Command\Acsf;
 
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -7,6 +7,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Helper\Table;
+use Taxman\Command\ContextAwareCommand;
 use Taxman\Context;
 use Taxman\Environment\Remote;
 use Taxman\Dispatch;
@@ -17,7 +18,7 @@ use Taxman\App\Drupal\Drush\SiteConfigCollection;
 
 
 
-class AcsfSiteListCommand extends ContextAwareCommand
+class SiteListCommand extends ContextAwareCommand
 {
     protected function configure()
     {

@@ -1,5 +1,5 @@
 <?php
-namespace Taxman\Command;
+namespace Taxman\Command\Acsf;
 
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -7,6 +7,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Helper\Table;
+use Taxman\Command\ContextAwareCommand;
 use Taxman\Context;
 use Taxman\Environment\Remote;
 use Taxman\Dispatch;
@@ -15,13 +16,13 @@ use Taxman\App\Drupal\Multisite\DataProvider\AggregateModuleUsage;
 use Taxman\App\Acquia\SiteFactory;
 use Taxman\App\Drupal\Drush\SiteConfigCollection;
 
-class AcsfModuleListCommand extends ContextAwareCommand
+class ModuleDebtCommand extends ContextAwareCommand
 {
     protected function configure()
     {
         $this
-            ->setName('acsf:module:list')
-            ->setDescription('Show sites using module')
+            ->setName('acsf:module:debt')
+            ->setDescription('Collect information about an Drupal multisite.')
             ->addArgument(
                 'acquia.docroot',
                 InputArgument::REQUIRED,
@@ -32,22 +33,11 @@ class AcsfModuleListCommand extends ContextAwareCommand
                 InputArgument::REQUIRED,
                 'The environment to run this on. E.g. 01live.'
             )
-            ->addArgument(
-                'module',
-                InputArgument::REQUIRED,
-                'The environment to run this on. E.g. 01live.'
-            )
             ->addOption(
               'load-from-drush-alias',
               'a',
               InputOption::VALUE_NONE,
-              'Choose to load the SSH criteria from a drush aliases.'
-            )
-            ->addOption(
-              'status',
-              null,
-              InputOption::VALUE_OPTIONAL,
-              'Only show sites that have module in status'
+              ''
             )
             ->addContext(
                 'remote',
@@ -91,18 +81,45 @@ class AcsfModuleListCommand extends ContextAwareCommand
         $usage->setArgument('drush.options', $collection);
         $usage->retrieve();
 
-        $module = $input->getArgument('module');
+        $debt = $usage->getMultisiteModuleUsage();
+        $maintIndex = $usage->getMultisiteModuleMaintenceIndexes();
+
+        if (!array_sum($maintIndex) || !count($usage->getModuleList())) {
+          throw new \Exception("Unable to determine Maintenance Index.");
+        }
+
+        $factor = array_sum($maintIndex) / count($usage->getModuleList());
+        $index = round($factor, 2);
 
         $table = new Table($output);
-        $table->setHeaders(['Sites using ' . $module . ' module', 'Module status']);
-        $matching_status = strtolower($input->getOption('status'));
-        foreach ($usage->getSitesbyModule($module) as $site => $status) {
-          $list = $usage->getSiteModules($site);
 
-          if (empty($matching_status) || ($matching_status == strtolower($status))) {
-            $table->addRow([$site, $status]);
-          }
+        $table->addRow(['Total Sites', $site_count = count($usage->getSites())]);
+        $table->addRow(['Maintenance Index', $index]);
+        $table->addRow(['Unique module usage', count($debt[1])]);
+        $table->addRow(['Unused modules', count($debt[0])]);
+        $table->addRow(['Total modules', count($usage->getModuleList()) . " (" . round($factor * 100, 2). "% effeciency)"]);
+
+        $table->render();
+
+        $table = new Table($output);
+        $table->setHeaders(['Module', 'Usage', 'Percentage']);
+
+        $rows = [];
+        foreach ($usage->getModuleList() as $module) {
+          $u = $usage->getModuleUsage($module);
+          $rows[] = [$module, $u, round($u/$site_count * 100, 2) . '%'];
+          //$table->addRow([$module, $u, round($u/$site_count * 100, 2) . '%']);
         }
+
+        $sort_column = 0;
+        usort($rows, function($a, $b) use ($sort_column) {
+          if ($a[$sort_column] == $b[$sort_column]) {
+            return 0;
+          }
+          return $a[$sort_column] > $b[$sort_column] ? 1 :-1;
+        });
+        $table->addRows($rows);
+
         $table->render();
     }
 }

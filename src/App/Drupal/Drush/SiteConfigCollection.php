@@ -5,6 +5,7 @@ use Taxman\Data\DataProvider;
 use Taxman\App\Drupal\Drush;
 use Taxman\App\Drupal\DrushOptions;
 use Symfony\Component\Console\Input\InputArgument;
+use Symfony\Component\Console\Input\InputOption;
 
 /**
  * Produce an array of DispatchManager options from a Drush site alias array.
@@ -25,6 +26,13 @@ class SiteConfigCollection extends DataProvider {
       'env',
       InputArgument::OPTIONAL,
       'The environment to run this on. E.g. 01live.'
+    )
+    ->defineOption(
+      'use-alias',
+      '',
+      InputOption::VALUE_OPTIONAL,
+      'Sets drush options as an alias rather than extracting options out directly.',
+      FALSE
     );
   }
 
@@ -34,6 +42,7 @@ class SiteConfigCollection extends DataProvider {
   protected function execute() {
     $site = $this->getArgument('site');
     $env = $this->getArgument('env');
+    $use_alias = $this->getOption('use-alias');
     $siteAlias = '@' . implode('.', array_filter([$site, $env]));
 
     $environment = $this->context->get('environment');
@@ -49,6 +58,16 @@ class SiteConfigCollection extends DataProvider {
     $collection = [];
     foreach ($sites as $alias => $info) {
       $drushOptions = new DrushOptions();
+
+      // Using the alias means we don't transfer the options directly.
+      if ($use_alias) {
+        $drushOptions->setAlias($alias);
+        if (isset($info['uri'])) {
+          $drushOptions->setOption('uri', $info['uri']);
+        }
+        $collection[$alias] = $drushOptions;
+        continue;
+      }
       foreach ($info as $key => $value) {
         if (is_array($value)) {
           continue;

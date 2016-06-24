@@ -1,5 +1,5 @@
 <?php
-namespace Taxman\Command;
+namespace Taxman\Command\Acsf;
 
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -7,6 +7,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputDefinition;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Helper\Table;
+use Taxman\Command\ContextAwareCommand;
 use Taxman\Context;
 use Taxman\Environment\Remote;
 use Taxman\Dispatch;
@@ -15,12 +16,12 @@ use Taxman\App\Drupal\Multisite\DataProvider\AggregateModuleUsage;
 use Taxman\App\Acquia\SiteFactory;
 use Taxman\App\Drupal\Drush\SiteConfigCollection;
 
-class AcsfSiteModulesCommand extends ContextAwareCommand
+class ModuleListCommand extends ContextAwareCommand
 {
     protected function configure()
     {
         $this
-            ->setName('acsf:site:modules')
+            ->setName('acsf:module:list')
             ->setDescription('Show sites using module')
             ->addArgument(
                 'acquia.docroot',
@@ -33,7 +34,7 @@ class AcsfSiteModulesCommand extends ContextAwareCommand
                 'The environment to run this on. E.g. 01live.'
             )
             ->addArgument(
-                'domain',
+                'module',
                 InputArgument::REQUIRED,
                 'The environment to run this on. E.g. 01live.'
             )
@@ -42,6 +43,12 @@ class AcsfSiteModulesCommand extends ContextAwareCommand
               'a',
               InputOption::VALUE_NONE,
               'Choose to load the SSH criteria from a drush aliases.'
+            )
+            ->addOption(
+              'status',
+              null,
+              InputOption::VALUE_OPTIONAL,
+              'Only show sites that have module in status'
             )
             ->addContext(
                 'remote',
@@ -85,35 +92,18 @@ class AcsfSiteModulesCommand extends ContextAwareCommand
         $usage->setArgument('drush.options', $collection);
         $usage->retrieve();
 
+        $module = $input->getArgument('module');
+
         $table = new Table($output);
-        $table->setHeaders(['Module', 'Status', 'Platform adoption']);
+        $table->setHeaders(['Sites using ' . $module . ' module', 'Module status']);
+        $matching_status = strtolower($input->getOption('status'));
+        foreach ($usage->getSitesbyModule($module) as $site => $status) {
+          $list = $usage->getSiteModules($site);
 
-        $domain = $input->getArgument('domain');
-        $sites = count($usage->getSites());
-
-        foreach ($usage->getSiteModules($domain) as $module => $status) {
-          if ($status != 'Enabled') {
-            continue;
+          if (empty($matching_status) || ($matching_status == strtolower($status))) {
+            $table->addRow([$site, $status]);
           }
-          $module_usage = $usage->getModuleUsage($module);
-          $percent = round($module_usage/$sites * 100, 1) . '%';
-
-          $percent = $module_usage == 1 ? '<info>Just this site</info>' : $percent;
-
-          $rows[] = [$module, $status, $percent];
         }
-
-        // Alphabetical order.
-        usort($rows, function ($a, $b) {
-          if ($a[0] == $b[0]) {
-            return 0;
-          }
-          $c = [$a[0], $b[0]];
-          sort($c);
-          return $c[0] == $a[0] ? -1 : 1;
-        });
-
-        $table->addRows($rows);
         $table->render();
     }
 }

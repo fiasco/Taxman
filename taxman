@@ -3,12 +3,14 @@
 
 require 'vendor/autoload.php';
 
-use Taxman\Command;
+use Taxman\Command\Acsf;
+use Taxman\Command\Multisite;
 use Symfony\Component\Console\Application;
 
 $application = new Application();
-$application->add(new Command\AcsfModuleDebtCommand());
-$application->add(new Command\AcsfModuleListCommand());
-$application->add(new Command\AcsfSiteListCommand());
-$application->add(new Command\AcsfSiteModulesCommand());
+$application->add(new Multisite\ModuleDebtCommand());
+$application->add(new Acsf\ModuleDebtCommand());
+$application->add(new Acsf\ModuleListCommand());
+$application->add(new Acsf\SiteListCommand());
+$application->add(new Acsf\SiteModulesCommand());
 $application->run();

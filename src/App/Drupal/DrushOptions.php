@@ -9,6 +9,23 @@ use Taxman\Environment\Remote;
  * DrushOptions implementation of Dispatch.
  */
 class DrushOptions extends DispatchManager {
+  protected $alias = FALSE;
+
+  /**
+   * Set the drush alias for the command if available.
+   */
+  public function setAlias($alias) {
+    $this->alias = $alias;
+    return $this;
+  }
+
+  /**
+   * Retrieve the drush alias.
+   */
+  public function getAlias() {
+    return $this->alias;
+  }
+
   public function createRemoteEnvironment()
   {
     if (!$this->getOption('remote-host')) {

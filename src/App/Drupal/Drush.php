@@ -3,6 +3,7 @@
 namespace Taxman\App\Drupal;
 
 use Taxman\Data\Dispatch;
+use Taxman\Data\DispatchManager;
 
 /**
  * Drush implementation of Dispatch.
@@ -41,5 +42,17 @@ class Drush extends Dispatch {
       return implode(' ', [$this->command, '@' . $this->alias, $this->formatOptions(), $this->formatArguments()]);
     }
     return parent::formatCommand();
+  }
+
+  /**
+   * Ensure an alias is bound when bind is called.
+   */
+  public function bind(DispatchManager $DispatchManager)
+  {
+    parent::bind($DispatchManager);
+
+    if ($DispatchManager instanceof DrushOptions) {
+      $this->setAlias($DispatchManager->getAlias());
+    }
   }
 }
