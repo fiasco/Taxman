@@ -1,5 +1,5 @@
 <?php
-namespace Taxman\Command\Acsf;
+namespace Taxman\Command\Multisite;
 
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -13,7 +13,6 @@ use Taxman\Environment\Remote;
 use Taxman\Dispatch;
 use Taxman\App\Drupal\Drush;
 use Taxman\App\Drupal\Multisite\DataProvider\AggregateModuleUsage;
-use Taxman\App\Acquia\SiteFactory;
 use Taxman\App\Drupal\Drush\SiteConfigCollection;
 
 class ModuleListCommand extends ContextAwareCommand
@@ -21,17 +20,12 @@ class ModuleListCommand extends ContextAwareCommand
     protected function configure()
     {
         $this
-            ->setName('acsf:module:list')
+            ->setName('multisite:module:list')
             ->setDescription('Show sites using module')
             ->addArgument(
-                'acquia.docroot',
+                'drush.alias',
                 InputArgument::REQUIRED,
                 'The name of the docroot for the subscription.'
-            )
-            ->addArgument(
-                'acquia.environment',
-                InputArgument::REQUIRED,
-                'The environment to run this on. E.g. 01live.'
             )
             ->addArgument(
                 'module',
@@ -39,20 +33,10 @@ class ModuleListCommand extends ContextAwareCommand
                 'The name of the module to assess.'
             )
             ->addOption(
-              'load-from-drush-alias',
-              'a',
-              InputOption::VALUE_NONE,
-              'Choose to load the SSH criteria from a drush aliases.'
-            )
-            ->addOption(
               'status',
               null,
               InputOption::VALUE_OPTIONAL,
               'Only show sites that have module in status'
-            )
-            ->addContext(
-                'remote',
-                new Remote()
             )
         ;
     }
@@ -61,37 +45,26 @@ class ModuleListCommand extends ContextAwareCommand
     {
         $context = $this->context();
 
-        $docroot = $input->getArgument('acquia.docroot');
-        $env = $input->getArgument('acquia.environment');
-
-        // Pull the ssh credentials from a local drush alias file.
-        if ($input->getOption('load-from-drush-alias')) {
-          $aliases = $context->load('drush.aliases', new SiteConfigCollection());
-          $aliases->setArgument('site', $docroot);
-          $aliases->setArgument('env', $env);
-          $drushOptions = $aliases->retrieve();
-          $remote = array_pop($drushOptions)->createRemoteEnvironment();
-        }
-        else {
-          $remote = new Remote();
+        $alias = $input->getArgument('drush.alias');
+        if (strpos($alias, '.') !== FALSE) {
+          throw new InvalidArgumentException("Drush alias must load all aliases in file and cannot use dot syntax.");
         }
 
-        $remote->setOptions($context->get('remote')->getOptions());
-        $context->load('environment', $remote);
-
-        $config = new SiteFactory\SiteConfigCollection();
-        $config->load($context);
-        $config->setArgument('site', $docroot);
-        $config->setArgument('env', $env);
-        $config->retrieve();
-
-        $collection = $config->get();
+        $aliases = $context->load('drush.aliases', new SiteConfigCollection());
+        $aliases->setArgument('site', $alias);
+        $aliases->setOption('use-alias', TRUE);
+        $drushOptions = $aliases->retrieve();
 
         $usage = new AggregateModuleUsage();
         $usage->load($context);
-        $usage->setArgument('drush.options', $collection);
+        $usage->setArgument('drush.options', $drushOptions);
         $usage->retrieve();
 
+        $this->renderAudit($usage, $input, $output);
+    }
+
+    protected function renderAudit(AggregateModuleUsage $usage, InputInterface $input, OutputInterface $output)
+    {
         $module = $input->getArgument('module');
 
         $table = new Table($output);

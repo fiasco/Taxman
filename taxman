@@ -9,6 +9,7 @@ use Symfony\Component\Console\Application;
 
 $application = new Application();
 $application->add(new Multisite\ModuleDebtCommand());
+$application->add(new Multisite\ModuleListCommand());
 $application->add(new Acsf\ModuleDebtCommand());
 $application->add(new Acsf\ModuleListCommand());
 $application->add(new Acsf\SiteListCommand());

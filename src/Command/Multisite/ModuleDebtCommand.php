@@ -50,6 +50,11 @@ class ModuleDebtCommand extends ContextAwareCommand
         $usage->setArgument('drush.options', $drushOptions);
         $usage->retrieve();
 
+        $this->renderAudit($usage, $output);
+    }
+
+    protected function renderAudit(AggregateModuleUsage $usage, OutputInterface $output)
+    {
         $debt = $usage->getMultisiteModuleUsage();
         $maintIndex = $usage->getMultisiteModuleMaintenceIndexes();
 

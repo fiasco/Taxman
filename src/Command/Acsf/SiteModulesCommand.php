@@ -36,7 +36,7 @@ class SiteModulesCommand extends ContextAwareCommand
             ->addArgument(
                 'domain',
                 InputArgument::REQUIRED,
-                'The environment to run this on. E.g. 01live.'
+                'The site to assess.'
             )
             ->addOption(
               'load-from-drush-alias',
