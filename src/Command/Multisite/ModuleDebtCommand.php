@@ -71,7 +71,7 @@ class ModuleDebtCommand extends ContextAwareCommand
         $table->addRow(['Maintenance Index', $index]);
         $table->addRow(['Unique module usage', count($debt[1])]);
         $table->addRow(['Unused modules', count($debt[0])]);
-        $table->addRow(['Total modules', count($usage->getModuleList()) . " (" . round($factor * 100, 2). "% effeciency)"]);
+        $table->addRow(['Total modules', count($usage->getModuleList()) . " (" . round($factor * 100, 2). "% efficiency)"]);
 
         $table->render();
 
